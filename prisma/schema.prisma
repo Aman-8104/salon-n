@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int           @id @default(autoincrement())
+  name               String
+  email              String        @unique
+  passwordHash       String
+  role               String        @default("CUSTOMER")
+  age                Int?
+  gender             String?
+  createdAt          DateTime      @default(now())
+  appointments       Appointment[] @relation("UserAppointments")
+  // For barbers, appointments where they are the barber
+  barberAppointments Appointment[] @relation("BarberAppointments")
+}
+
+model Service {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  description  String
+  duration     Int           // minutes
+  price        Int           // in cents
+  category     String
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+}
+
+model Appointment {
+  id         Int      @id @default(autoincrement())
+  customer   User     @relation("UserAppointments", fields: [customerId], references: [id])
+  customerId Int
+  barber     User     @relation("BarberAppointments", fields: [barberId], references: [id])
+  barberId   Int
+  service    Service  @relation(fields: [serviceId], references: [id])
+  serviceId  Int
+  startTime  DateTime
+  endTime    DateTime
+  status     String   @default("SCHEDULED")
+  createdAt  DateTime @default(now())
+}
+
+// Note: Using strings for enums due to SQLite limitations

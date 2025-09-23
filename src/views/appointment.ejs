@@ -1,0 +1,155 @@
+<%- include('partials/head', { title }) %>
+  <h1>Book an Appointment</h1>
+  <% if (!currentUser) { %>
+    <div class="notice">Please <a href="/login">log in</a> or <a href="/register">register</a> to book.</div>
+  <% } %>
+  <div class="steps">
+    <div class="step" data-step="1">
+  <h3>1. Select Service(s)</h3>
+  <div id="service-options" class="cards"></div>
+  <p id="totals"></p>
+    </div>
+    <div class="step" data-step="2">
+      <h3>2. Select Barber (optional)</h3>
+      <select id="barberSelect"></select>
+    </div>
+    <div class="step" data-step="3">
+      <h3>3. Pick Date & Time</h3>
+  <input type="date" id="datePicker" />
+      <div id="timeSlots" class="slots"></div>
+  <p id="slotHint" class="notice" style="display:none"></p>
+    </div>
+    <div class="step" data-step="4">
+      <h3>4. Confirm</h3>
+      <div id="confirmDetails"></div>
+      <% if (currentUser) { %>
+        <div class="notice">
+          <p><strong>Your Details:</strong></p>
+          <p>Name: <%= currentUser.name %></p>
+          <p>Email: <%= currentUser.email %></p>
+          <% if (currentUser.age) { %><p>Age: <%= currentUser.age %></p><% } %>
+          <% if (currentUser.gender) { %><p>Gender: <%= currentUser.gender %></p><% } %>
+        </div>
+      <% } %>
+      <button id="confirmBtn" class="cta" disabled>Confirm Booking</button>
+    </div>
+  </div>
+  <script>
+  const state = { services: [], barbers: [], selected: new Set(), barberId: null, duration: 0, price: 0, startISO: null };
+    fetch('/appointments/data').then(r => r.json()).then(({services, barbers}) => {
+      state.services = services; state.barbers = barbers;
+      const sWrap = document.getElementById('service-options');
+      services.forEach(s => {
+        const el = document.createElement('button');
+        el.className = 'card'; el.type='button';
+        const price = (s.price/100).toLocaleString('en-IN',{minimumFractionDigits:2});
+        el.textContent = `${s.name} — ₹${price} · ${s.duration}m`;
+        el.onclick = () => {
+          if(state.selected.has(s.id)) state.selected.delete(s.id); else state.selected.add(s.id);
+          el.classList.toggle('active');
+          recomputeTotals();
+          loadAvailability();
+        };
+        sWrap.appendChild(el);
+      });
+      const barberSel = document.getElementById('barberSelect');
+      const optAny = document.createElement('option'); optAny.value = ''; optAny.textContent = 'Any available'; barberSel.appendChild(optAny);
+      barbers.forEach(b => { const o = document.createElement('option'); o.value = b.id; o.textContent = b.name; barberSel.appendChild(o); });
+      barberSel.onchange = () => { state.barberId = barberSel.value || null; loadAvailability(); };
+      const dp = document.getElementById('datePicker');
+      const today = new Date(); today.setHours(0,0,0,0);
+      dp.min = today.toISOString().slice(0,10);
+      dp.onchange = loadAvailability;
+      // Pre-fill with today by default
+      dp.value = dp.min;
+    });
+
+    function loadAvailability(){
+      const dateInput = document.getElementById('datePicker').value;
+      const slotsWrap = document.getElementById('timeSlots');
+      const hint = document.getElementById('slotHint');
+      slotsWrap.innerHTML = '';
+      hint.style.display = 'none';
+      if(state.selected.size === 0){
+        hint.textContent = 'Select at least one service to see available time slots.'; hint.style.display = 'block';
+        return;
+      }
+      if(!dateInput) return;
+      const barber = state.barberId || (state.barbers[0] && state.barbers[0].id);
+      if(!barber) return;
+      const dateISO = new Date(dateInput).toISOString();
+      const q = new URLSearchParams({barberId: barber, dateISO, duration: String(state.duration||0)});
+      fetch(`/appointments/availability?${q.toString()}`).then(r=>r.json()).then(({slots})=>{
+        if(!slots || slots.length === 0){
+          hint.textContent = 'No slots available for this date. Please choose another date.'; hint.style.display = 'block';
+          return;
+        }
+        slots.forEach(s=>{
+          const b = document.createElement('button'); b.className='slot';
+          const d = new Date(s.start);
+          b.textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+          b.onclick = ()=>{
+            state.startISO = s.start;
+            Array.from(slotsWrap.querySelectorAll('.slot')).forEach(x=>x.classList.remove('active'));
+            b.classList.add('active');
+            renderConfirm();
+          };
+          slotsWrap.appendChild(b);
+        });
+      });
+    }
+
+    function renderConfirm(){
+      const el = document.getElementById('confirmDetails');
+      const chosen = state.services.filter(x=>state.selected.has(x.id));
+      el.innerHTML = `<p><strong>Services:</strong> ${chosen.map(x=>x.name).join(', ')}</p>
+        <p><strong>Total Duration:</strong> ${state.duration} minutes</p>
+        <p><strong>Total Price:</strong> ₹${(state.price/100).toLocaleString('en-IN',{minimumFractionDigits:2})}</p>
+        <p><strong>Time:</strong> ${new Date(state.startISO).toLocaleString()}</p>`;
+      const btn = document.getElementById('confirmBtn');
+      btn.disabled = !state.startISO;
+      if(!state.startISO){
+        const el2 = document.createElement('p'); el2.className='notice'; el2.textContent = 'Please select a time slot above to enable booking.';
+        el.appendChild(el2);
+      }
+      btn.onclick = async ()=>{
+        try {
+          btn.disabled = true; btn.textContent = 'Booking...';
+          const barber = state.barberId || (state.barbers[0] && state.barbers[0].id);
+          const body = { serviceIds: Array.from(state.selected), barberId: barber, startISO: state.startISO };
+          const res = await fetch('/appointments', {
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json',
+              'Accept':'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+          });
+          let data;
+          try { data = await res.json(); } catch (_) { data = null; }
+          if(res.ok && data && data.ok){
+            alert('Booked! Confirmation sent to your email.');
+            window.location.href='/profile';
+          } else {
+            const msg = (data && (data.error || data.message)) || `Failed (${res.status})`;
+            alert(msg);
+          }
+        } catch (err) {
+          console.error('Booking error', err);
+          alert('Something went wrong while booking. Please try again.');
+        } finally {
+          btn.disabled = false; btn.textContent = 'Confirm Booking';
+        }
+      };
+    }
+
+    function recomputeTotals(){
+      let dur=0, price=0; const chosen = state.services.filter(x=>state.selected.has(x.id));
+      chosen.forEach(s=>{ dur+=s.duration; price+=s.price; });
+      state.duration=dur; state.price=price;
+      const t = document.getElementById('totals');
+  t.textContent = chosen.length? `Selected ${chosen.length} services — ${dur} minutes — ₹${(price/100).toLocaleString('en-IN',{minimumFractionDigits:2})}` : '';
+    }
+  </script>
+<%- include('partials/footer') %>

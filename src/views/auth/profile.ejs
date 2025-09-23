@@ -1,0 +1,57 @@
+<%- include('../partials/head', { title }) %>
+  <h1>My Profile</h1>
+  <p>Welcome, <%= currentUser?.name %>!</p>
+  <div id="my-appts" class="cards"></div>
+  <script>
+    fetch('/api/my-appointments').then(r=>r.json()).then(list=>{
+      const wrap = document.getElementById('my-appts');
+      list.forEach(a=>{
+        const d = document.createElement('div');
+        d.className='card';
+  const price = (a.service.price/100).toLocaleString('en-IN',{minimumFractionDigits:2});
+  const start = new Date(a.startTime);
+  const future = start > new Date();
+  const cancellable = future && a.status === 'SCHEDULED';
+  d.innerHTML = `<strong>${a.service.name}</strong> — ₹${price}<br>${start.toLocaleString()}<br>Status: <span class="status">${a.status}</span>`;
+  if(cancellable){
+    const btn = document.createElement('button');
+    btn.className = 'cta';
+    btn.textContent = 'Cancel Appointment';
+    btn.onclick = async () => {
+      if(!confirm('Cancel this appointment?')) return;
+      btn.disabled = true; btn.textContent = 'Cancelling...';
+      try{
+        const res = await fetch(`/api/cancel-appointment/${a.id}`, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: '{}',
+          credentials: 'same-origin'
+        });
+        let data;
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          data = { ok: res.ok, error: text || `HTTP ${res.status}` };
+        }
+        if(res.ok && data.ok){
+          d.querySelector('.status').textContent = 'CANCELLED';
+          btn.remove();
+        }else{
+          alert(data.error || 'Unable to cancel');
+          btn.disabled = false; btn.textContent = 'Cancel Appointment';
+        }
+      }catch(e){
+        alert('Network error');
+        btn.disabled = false; btn.textContent = 'Cancel Appointment';
+      }
+    };
+    d.appendChild(document.createElement('br'));
+    d.appendChild(btn);
+  }
+        wrap.appendChild(d);
+      });
+    });
+  </script>
+<%- include('../partials/footer') %>

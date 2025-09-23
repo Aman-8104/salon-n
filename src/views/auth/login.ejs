@@ -1,0 +1,11 @@
+<%- include('../partials/head', { title }) %>
+  <h1><%= title %></h1>
+  <form class="card" method="post" action="<%= role === 'barber' ? '/barber-login' : (role === 'admin' ? '/admin-login' : '/login') %>">
+    <label>Email<input name="email" type="email" required /></label>
+    <label>Password<input name="password" type="password" required /></label>
+    <button class="cta" type="submit">Login</button>
+  </form>
+  <% if (role === 'customer') { %>
+    <p>New here? <a href="/register">Create an account</a></p>
+  <% } %>
+<%- include('../partials/footer') %>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> | Mens Salon</title>
+  <meta name="theme-color" content="#0f1115" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="logo" href="/">
+        <img class="logo-img" src="/images/logo.jpg" alt="Mens Salon logo" width="160" height="44" loading="eager"/>
+        <span class="brand-text">Mens Salon</span>
+      </a>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+      <nav class="nav-menu" id="nav-menu">
+        <% if (currentUser && currentUser.role === 'BARBER') { %>
+          <a href="/barber">Barber</a>
+          <span class="user-name"><%= currentUser.name %></span>
+          <form class="inline" action="/logout" method="post"><button type="submit">Logout</button></form>
+        <% } else if (currentUser && currentUser.role === 'ADMIN') { %>
+          <a href="/admin">Admin</a>
+          <span class="user-name"><%= currentUser.name %></span>
+          <form class="inline" action="/logout" method="post"><button type="submit">Logout</button></form>
+        <% } else { %>
+          <a href="/about">About</a>
+          <a href="/services">Services</a>
+          <a href="/contact">Contact</a>
+          <a class="cta" href="/appointment">Book Now</a>
+          <% if (!currentUser) { %>
+            <div class="dropdown login-menu">
+              <button class="btn-link login-menu-toggle" aria-expanded="false">Login ▾</button>
+              <div class="dropdown-menu" hidden>
+                <a href="/login">Customer Login</a>
+                <a href="/barber-login">Barber Login</a>
+                <a href="/admin-login">Admin Login</a>
+              </div>
+            </div>
+          <% } else { %>
+            <a href="/profile">Profile</a>
+            <span class="user-name"><%= currentUser.name %></span>
+            <form class="inline" action="/logout" method="post"><button type="submit">Logout</button></form>
+          <% } %>
+        <% } %>
+        <button id="theme-toggle" class="btn-link nav-theme" title="Toggle theme">🌓</button>
+      </nav>
+    </div>
+  </header>
+  <main class="container">

@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+coverage/
+dist/
+tmp/
+.DS_Store
+*.log
+npm-debug.log*
+yarn-error.log*
+.prisma/
+**/*.sqlite
+**/*.sqlite-journal
+**/*.db
+**/*.db-journal

@@ -1,0 +1,42 @@
+<%- include('../partials/head', { title }) %>
+  <h1>Today’s Appointments</h1>
+  <div class="cards" style="margin-bottom:12px">
+    <div class="card"><h3>This Week</h3><p><strong><%= stats.week.total %></strong> appointments</p><p><strong><%= stats.week.customers %></strong> customers</p></div>
+    <div class="card"><h3>This Month</h3><p><strong><%= stats.month.total %></strong> appointments</p><p><strong><%= stats.month.customers %></strong> customers</p></div>
+  </div>
+  <% if (appts.length === 0) { %>
+    <p>No appointments today.</p>
+  <% } %>
+  <ul class="list">
+    <% appts.forEach(a => { %>
+      <li class="card">
+        <div>
+          <strong><%= a.customer.name %></strong> — <%= a.service.name %> — <%= new Date(a.startTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) %>
+        </div>
+        <form method="post" action="/barber/appointments/<%= a.id %>/status">
+          <select name="status">
+            <option <%= a.status==='SCHEDULED'?'selected':'' %>>SCHEDULED</option>
+            <option <%= a.status==='COMPLETED'?'selected':'' %>>COMPLETED</option>
+            <option <%= a.status==='CANCELLED'?'selected':'' %>>CANCELLED</option>
+          </select>
+          <button type="submit">Update</button>
+        </form>
+      </li>
+    <% }) %>
+  </ul>
+  <h2>Upcoming Bookings</h2>
+  <% if (!upcoming || upcoming.length === 0) { %>
+    <p>No upcoming bookings.</p>
+  <% } else { %>
+    <ul class="list">
+      <% upcoming.forEach(a => { %>
+        <li class="card">
+          <div>
+            <strong><%= a.customer.name %></strong> — <%= a.service.name %> — <%= new Date(a.startTime).toLocaleString() %>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+  <p><a class="cta" href="/barber/earnings">View Earnings</a></p>
+<%- include('../partials/footer') %>

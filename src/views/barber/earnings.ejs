@@ -1,0 +1,14 @@
+<%- include('../partials/head', { title }) %>
+  <h1>Earnings</h1>
+  <div class="filters">
+    <a href="/barber/earnings?period=today">Today</a>
+    <a href="/barber/earnings?period=week">This Week</a>
+    <a href="/barber/earnings?period=month">This Month</a>
+  </div>
+  <h2>Total: ₹<%= (total/100).toLocaleString('en-IN',{minimumFractionDigits:2}) %> (<%= period %>)</h2>
+  <ul class="list">
+    <% appts.forEach(a => { %>
+  <li class="card"><%= a.service.name %> — ₹<%= (a.service.price/100).toLocaleString('en-IN',{minimumFractionDigits:2}) %> — <%= new Date(a.startTime).toLocaleDateString() %></li>
+    <% }) %>
+  </ul>
+<%- include('../partials/footer') %>
