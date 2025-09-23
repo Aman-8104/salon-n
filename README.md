@@ -64,12 +64,12 @@ Open http://localhost:3000
 1. Push this project to your GitHub account
 2. Railway → New Project → Deploy from GitHub Repo → select your repo
 3. Set Environment Variables (Settings → Variables):
-	- `PORT` = `3000`
+	- Remove any `PORT` variable (Railway provides one automatically)
 	- `DATABASE_URL` = `file:./dev.db` (or use Railway Postgres and its URL)
 	- `SESSION_SECRET` = long random string
 	- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` (for emails)
-4. Build commands (optional): `npx prisma generate`
-5. Start command: `node src/server.js`
+4. Build command: `npx prisma generate`
+5. Start command: `npm run start:deploy` (applies migrations, seeds, then starts)
 6. Railway provides a public URL once deploy succeeds.
 
 Tip: For Postgres, change `DATABASE_URL` to the provisioned URL and run `npx prisma migrate deploy` then `npm run seed` from the Railway shell.

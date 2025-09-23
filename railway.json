@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npx prisma generate"
+  },
+  "deploy": {
+    "startCommand": "npm run start:deploy",
+    "healthcheckPath": "/appointments/health",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
