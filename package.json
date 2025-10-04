@@ -4,10 +4,10 @@
   "private": true,
   "description": "Men's Salon website with booking, customer and barber dashboards",
   "main": "src/server.js",
-  "scripts": {
+ "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "start:deploy": "npx prisma migrate deploy && node prisma/seed.js && node src/server.js",
+    "db:deploy": "npx prisma migrate deploy && node prisma/seed.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "seed": "node prisma/seed.js",
